@@ -6,6 +6,9 @@
     <title>Voice Chat with Gemini AI</title>
     <script src="https://code.responsivevoice.org/responsivevoice.js?key=fa74ylJE"></script>
     <style>
+        html{
+            overflow:hidden;
+        }
         body {
             margin: 0;
             font-family: Arial, sans-serif;
@@ -99,6 +102,7 @@
     <button id="stop">Stop</button>
 
     <script>
+        var stopVoice = parseInt(sessionStorage.getItem('bg'), 10) || 0;
         const speakButton = document.getElementById("speak-button");
         const stopButton = document.getElementById("stop");
         const overlay = document.getElementById("overlay");
@@ -181,11 +185,18 @@
                 talkingGif.style.display = 'block';
 
                 responsiveVoice.speak(apiResponse, `UK English ${voiceType}`, {
+                    onstart:() =>{
+                       if (stopVoice=== 1){
+                        console.log(stopVoice)
+                        window.parent.postMessage(0, '*');
+                       } 
+                    },
                     onend: () => {
                         mascot.style.display = 'block';
                         talkingGif.style.display = 'none';
                         stopButton.style.display = 'none';
                         speakButton.style.display = 'block';
+                        window.parent.postMessage(stopVoice, '*');
                     }
                 });
             } catch (error) {
