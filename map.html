@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaflet with Routing</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+    <link rel="prefetch" href="https://travellingminds007.pythonanywhere.com/">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            margin: 0;
+            background-color: #FFE1FF; /* Light background color */
+        }
+        #map {
+            width: 100%;
+            height: 500px;
+            border: 8px solid #7E60BF; /* Border for the map */
+            border-radius: 10px; /* Rounded corners */
+        }
+        .route-info {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #E4B1F0; /* Light overlay color */
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+            z-index: 1000;
+            color: #433878; /* Text color */
+            font-weight: bold; /* Bold text */
+            max-width: 300px; /* Limit width of route info */
+        }
+        h1 {
+            color: #433878; /* Header color */
+            text-align: center;
+        }
+        /* Style for the directions */
+        .directions {
+            background: #E4B1F0; /* Light background for directions */
+            color: #433878; /* Text color */
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+            max-width: 300px; /* Limit width of directions */
+            position: absolute;
+            top: 60px; /* Position below the route info */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+        }
+        .leaflet-control-zoom {
+            background: #433878; /* Background color for zoom buttons */
+            border-radius: 5px;
+        }
+        .leaflet-control-zoom a {
+            color: #433878; /* Text color for zoom buttons */
+            font-weight: bold; /* Bold text */
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #7E60BF; /* Button color */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #E4B1F0; /* Button hover color */
+        }
+    </style>
+</head>
+<body>
+
+<h1>Travelling Minds</h1> <!-- Added a title -->
+
+<!-- Container for the map -->
+<div id="map"></div>
+<div class="route-info" id="route-info" style="display: none;"></div>
+<div class="directions" id="directions" style="display: none;"></div> <!-- Directions section -->
+<br><br>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+<script>
+    var map = L.map('map').setView([20.5937, 78.9629], 5); // Centered on India
+
+    // Add Google Maps as a tile layer
+    var googleLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+        maxZoom: 20,
+        subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+        attribution: 'Map data &copy; <a href="https://www.google.com/intl/en_us/help/terms_maps.html">Google</a>',
+    }).addTo(map);
+
+    var userMarker, routingControl;
+
+    // Function to get the user's location
+    // Function to get the user's location
+    function getLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(async function(position) {
+                var lat = position.coords.latitude;
+                var lon = position.coords.longitude;
+
+                // Log the coordinates for troubleshooting
+                console.log('User Location:', lat, lon);
+
+                // Update the map view to the user's location
+                map.setView([lat, lon], 15);
+
+                // Add a marker for the user's location
+                userMarker = L.marker([lat, lon]).addTo(map).bindPopup('You are here!').openPopup();
+
+                try {
+                    // Fetch location name using Nominatim
+                    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
+                    const data = await response.json();
+
+                    // Extract the location name from the response
+                    const locationName = data.display_name || "Unknown location";
+                    console.log('Location Name:', locationName);
+
+                    // Store the location name in sessionStorage
+                    sessionStorage.setItem('currentLocationName', locationName);
+                    sessionStorage.setItem('currentLatitude', lat);
+                    sessionStorage.setItem('currentLongitude', lon);
+                } catch (error) {
+                    console.error('Error occurred while fetching location name:', error);
+                    alert('Unable to retrieve location name.');
+                }
+            }, function(error) {
+                console.error('Error occurred while retrieving location:', error);
+                alert('Unable to retrieve your location. Please ensure location services are enabled.');
+            });
+        } else {
+            alert('Geolocation is not supported by this browser.');
+        }
+    }
+
+    // Function to show route from current location to clicked location
+    function showRoute(destination) {
+        if (userMarker) {
+            var userLocation = userMarker.getLatLng();
+
+            // Remove the existing route if already present
+            if (routingControl) {
+                map.removeControl(routingControl);
+                document.getElementById('directions').style.display = 'none'; // Hide directions on new route
+            }
+
+            // Add a new route from user's location to the clicked point
+            routingControl = L.Routing.control({
+                waypoints: [
+                    L.latLng(userLocation.lat, userLocation.lng),
+                    L.latLng(destination.lat, destination.lng)
+                ],
+                routeWhileDragging: true,
+                createMarker: function() { return null; }, // Prevent marker creation
+                // Display distance, duration, and directions
+                onRoutesChanged: function(e) {
+                    var routes = e.routes;
+                    var distance = routes[0].summary.totalDistance / 1000; // Convert to km
+                    var duration = routes[0].summary.totalTime / 60; // Convert to minutes
+                    var instructions = routes[0].instructions;
+
+                    // Format the distance and duration
+                    var distanceText = `Distance: ${distance.toFixed(2)} km, Duration: ${duration.toFixed(0)} min`;
+                    document.getElementById('route-info').innerHTML = distanceText;
+                    document.getElementById('route-info').style.display = 'block';
+
+                    // Display the instructions
+                    var directionsText = instructions.map(inst => inst.text).join('<br>');
+                    document.getElementById('directions').innerHTML = directionsText;
+                    document.getElementById('directions').style.display = 'block';
+                }
+            }).addTo(map);
+        }
+    }
+
+    // Add an event listener to the map for clicks
+    map.on('click', function(e) {
+        var destinationLatLng = e.latlng;
+        showRoute(destinationLatLng);
+    });
+    
+
+    // Get the user's location on page load
+    window.onload = getLocation;
+</script>
+
+</body>
+</html>

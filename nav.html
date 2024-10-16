@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Travelling Minds</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #FFE1FF; /* Background color */
+            font-family: Arial, sans-serif;
+        }
+
+        h1 {
+            color: #433878; /* Title color */
+            margin-bottom: 20px;
+        }
+
+        img {
+            max-width: 100%;
+            height: 70%;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #7E60BF; /* Button color */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #E4B1F0; /* Button hover color */
+        }
+
+        nav {
+            background-color: #333;
+            color: white;
+            padding: 10px;
+            display: none; /* Hide by default */
+            width: 100%;
+            justify-content: center;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 15px;
+        }
+
+        nav a:hover {
+            background-color: #555;
+        }
+
+        #content {
+            width: 100%;
+            height: calc(100vh - 50px); /* Adjust height to fit the navbar */
+            display: none; /* Hide by default */
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* Background audio */
+        audio {
+            display: none; /* Hide by default */
+        }
+
+        #confirm-section {
+            display: none;
+            text-align: center;
+        }
+
+        #confirm-section p {
+            color: #433878;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1 id="title"><u>TRAVELLING MINDS</u></h1>
+    <img id="image" src="mde.png" alt="Travelling Minds Image" />
+    <button id="start-button">Start</button>
+
+    <nav id="nav">
+        <a href="#" onclick="openPage('chat.html')">Mascot</a>
+        <a href="#" onclick="openPage('map.html')">Map</a>
+        <a href="#" onclick="openPage('scanner.html')">Scanner</a>
+        <a href="#" onclick="openPage('setting.html')">Settings</a>
+    </nav>
+
+    <div id="content">
+        <iframe id="iframe" src="map.html"></iframe>
+    </div>
+
+    <!-- Background audio -->
+    <audio id="background-audio" loop>
+        <source src="bg.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
+<script>
+    function startApp() {
+        document.getElementById('title').style.display = 'none'; // Hide title
+        document.getElementById('image').style.display = 'none'; // Hide image
+        document.getElementById('start-button').style.display = 'none'; // Hide start button
+        document.getElementById('nav').style.display = 'flex'; // Show nav
+        document.getElementById('content').style.display = 'block'; // Show content
+    }
+    
+
+    // Event listener for start button
+    document.getElementById('start-button').onclick = function() {
+        const audio = document.getElementById('background-audio');
+        audio.play();
+        startApp(); // Start the app
+    };  
+
+    // Function to open the selected page
+    function openPage(page) {
+        document.getElementById('iframe').src = page;
+    }
+    window.onload = function() {
+        sessionStorage.setItem('bg','1');
+        sessionStorage.setItem('var','1');
+    };
+    window.addEventListener('message', function(event) {
+        const audio = document.getElementById('background-audio');
+        if (event.data === 0) {
+            audio.pause();
+        } else {
+            audio.play();
+        }
+    });
+</script>
+
+</body>
+</html>

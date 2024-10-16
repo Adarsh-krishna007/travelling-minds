@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Scanner</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #433878;
+            color: #FFE1FF;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        video {
+            width: 100%;
+            height: auto;
+            border: 5px solid #7E60BF;
+            border-radius: 10px;
+        }
+        button {
+            background-color: #7E60BF;
+            color: #FFE1FF;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #E4B1F0;
+        }
+        #response {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #7E60BF;
+            background-color: #E4B1F0;
+            color: #433878;
+            display: none;
+        }
+        #processing {
+            color: #FFE1FF;
+            margin-top: 20px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Scan Image with AI</h1>
+        <video id="camera" autoplay playsinline></video>
+        <br>
+        <button id="scanButton">Scan</button>
+        <p id="processing" style="display:none;">Processing...</p>
+        <div id="response"></div>
+    </div>
+
+    <script>
+        const video = document.getElementById('camera');
+        const scanButton = document.getElementById('scanButton');
+        const processingText = document.getElementById('processing');
+        const responseDiv = document.getElementById('response');
+
+        // Try to access the back camera first
+        navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: 'environment' } }
+        })
+        .then((stream) => {
+            video.srcObject = stream;
+        })
+        .catch(() => {
+            // If back camera isn't available, use the front camera
+            navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'user' }
+            })
+            .then((stream) => {
+                video.srcObject = stream;
+            });
+        });
+
+        // Capture image from video stream when Scan button is clicked
+        scanButton.addEventListener('click', function() {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Convert the captured image to a Blob to send to the backend
+            canvas.toBlob((blob) => {
+                const formData = new FormData();
+                formData.append('image', blob);
+
+                // Display "Processing..." while waiting for the response
+                processingText.style.display = 'block';
+                responseDiv.style.display = 'none';
+
+                // Send the image to the backend for processing
+                fetch('https://travellingminds007.pythonanywhere.com/upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then((response) => response.json())
+                .then((result) => {
+                    // Hide "Processing..." and show the result
+                    processingText.style.display = 'none';
+                    if (result.text) {
+                        responseDiv.innerHTML = `<strong>Generated Text:</strong> ${result.text}`;
+                        responseDiv.style.display = 'block';
+                    } else {
+                        responseDiv.innerHTML = `<strong>Error:</strong> ${result.error}`;
+                        responseDiv.style.display = 'block';
+                    }
+                })
+                .catch(() => {
+                    processingText.style.display = 'none';
+                    responseDiv.innerHTML = 'An error occurred while processing the image.';
+                    responseDiv.style.display = 'block';
+                });
+            });
+        });
+    </script>
+</body>
+</html>

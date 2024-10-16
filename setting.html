@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Options Page</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #E4B1F0; /* Light background color */
+            font-family: Arial, sans-serif;
+            color: #433878; /* Text color */
+        }
+        h1 {
+            color: #7E60BF; /* Heading color */
+        }
+        .options {
+            display: flex;
+            justify-content: space-between;
+            width: 80%;
+            margin: 20px 0;
+        }
+        .option {
+            text-align: center;
+            flex: 1;
+        }
+        img {
+            width: 80px; /* Image size */
+            height: 80px; /* Image size */
+            cursor: pointer;
+        }
+        .music {
+            margin: 20px 0;
+        }
+        button {
+            background-color: #FFE1FF; /* Button color */
+            color: #433878; /* Text color */
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #7E60BF; /* Button hover color */
+            color: #FFE1FF; /* Text color on hover */
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Select a Mascot</h1>
+    
+    <div class="options">
+        <div class="option">
+            <img src="1/mascot.gif" alt="Left Option" id="leftOption">
+            <p>Male</p>
+        </div>
+        <div class="option">
+            <img src="2/mascot.gif" alt="Right Option" id="rightOption">
+            <p>Female</p>
+        </div>
+    </div>
+
+    <div class="music">
+        <label for="bgMusic">Background Music:</label>
+        <select id="bgMusic">
+            <option value="on">On</option>
+            <option value="off">Off</option>
+        </select>
+    </div>
+
+    <button id="applyButton">Apply</button>
+
+    <script>
+        const leftOption = document.getElementById('leftOption');
+        const rightOption = document.getElementById('rightOption');
+        const bgMusicSelect = document.getElementById('bgMusic');
+        const applyButton = document.getElementById('applyButton');
+
+        // Initialize selected option from sessionStorage
+        let selectedOption = sessionStorage.getItem('var');
+
+        // Check if there's a previously selected option and adjust opacity
+        if (selectedOption === '1') {
+            leftOption.style.opacity = 1; // Male option selected
+            rightOption.style.opacity = 0.5; // Disable female option
+        } else if (selectedOption === '2') {
+            leftOption.style.opacity = 0.5; // Disable male option
+            rightOption.style.opacity = 1; // Female option selected
+        }
+
+        // Initialize background music from sessionStorage
+        const bgMusic = sessionStorage.getItem('bg');
+        if (bgMusic === '1') {
+            bgMusicSelect.value = 'on'; // Set to 'on'
+        } else {
+            bgMusicSelect.value = 'off'; // Set to 'off'
+        }
+
+
+        leftOption.onclick = () => {
+            selectedOption = 1;
+            sessionStorage.setItem('var', selectedOption);
+            rightOption.style.opacity = 0.5; // Disable right option
+            leftOption.style.opacity = 1; // Enable left option
+        };
+
+        rightOption.onclick = () => {
+            selectedOption = 2;
+            sessionStorage.setItem('var', selectedOption);
+            leftOption.style.opacity = 0.5; // Disable left option
+            rightOption.style.opacity = 1; // Enable right option
+        };
+
+        applyButton.onclick = () => {
+            const bgMusic = bgMusicSelect.value === 'on' ? 1 : 0;
+            window.parent.postMessage(bgMusic, '*'); 
+            sessionStorage.setItem('bg',bgMusic);
+            
+        };
+    </script>
+</body>
+</html>

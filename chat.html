@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Chat with Gemini AI</title>
+    <script src="https://code.responsivevoice.org/responsivevoice.js?key=fa74ylJE"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #E4B1F0;
+        }
+
+        .video-container {
+            position: absolute;
+            width: 95%;
+            height: 95vh;
+            border: 5px solid #433878;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: #FFE1FF;
+            font-size: 3em;
+            font-weight: bold;
+            text-align: center;
+            visibility: hidden;
+        }
+
+        #speak-button, #stop, #go-back-button {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            background-color: #7E60BF;
+            color: #E4B1F0;
+            font-size: 1.5em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        #speak-button {
+            bottom: 50px;
+            margin-bottom: 50px;
+        }
+
+        #stop {
+            bottom: 50px;
+            display: none;
+        }
+
+        #go-back-button {
+            bottom: 20px;
+            margin-bottom: 600px;
+        }
+
+        .mascot {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 150px;
+            height: auto;
+        }
+
+        .talking-gif {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="video-container">
+        <video id="video" autoplay></video>
+        <div id="overlay" class="overlay">Thinking...</div>
+    </div>
+
+    <img id="mascot" class="mascot" src="" alt="Mascot">
+    <img id="talking-gif" class="mascot talking-gif" src="" alt="Talking">
+
+    <button id="speak-button">Speak</button>
+    <button id="stop">Stop</button>
+
+    <script>
+        const speakButton = document.getElementById("speak-button");
+        const stopButton = document.getElementById("stop");
+        const overlay = document.getElementById("overlay");
+        const video = document.getElementById("video");
+        const mascot = document.getElementById("mascot");
+        const talkingGif = document.getElementById("talking-gif");
+        const lname = sessionStorage.getItem('currentLocationName');
+        const lat = sessionStorage.getItem('currentLatitude');
+        const lon = sessionStorage.getItem('currentLongitude');
+        console.log(lname);
+        
+
+        const sessionVar = sessionStorage.getItem('var');
+        const folder = sessionVar === '1' ? '1' : '2';
+        var voiceType
+        if (folder==="1"){
+            voiceType="Male"
+        }
+        else{
+            voiceType="Female"
+        }
+        console.log(folder);
+        
+
+        mascot.src = `${folder}/mascot.gif`;
+        talkingGif.src = `${folder}/talking.gif`;
+
+        const API_KEY = "AIzaSyDOBPPhIyLL4OonZ-tkaW62NkewvcLoql8";
+        const API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${API_KEY}`;
+
+        async function startCamera() {
+            try {
+                const constraints = {
+                    video: { facingMode: { exact: "environment" } }
+                };
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
+            } catch (error) {
+                const frontStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: "user" }
+                });
+                video.srcObject = frontStream;
+            }
+        }
+
+        startCamera();
+        let abortController = new AbortController();
+
+
+
+        stopButton.addEventListener('click', () => {
+            responsiveVoice.cancel();
+            abortController.abort();
+            overlay.style.visibility = 'hidden';
+            stopButton.style.display = 'none';
+            speakButton.style.display = 'block';
+            mascot.style.display = 'block';
+            talkingGif.style.display = 'none';
+        });
+
+        const generateAPIResponse = async (userMessage) => {
+            abortController = new AbortController();
+            overlay.style.visibility = 'visible';
+
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: `user message :${userMessage}. If the user's message is related to a location, answer the question using the location name: ${lname}. If the location name seems incorrect, adjust it based on your knowledge. If the user's message is unrelated to location, respond as usual ` }] }] }),
+                    signal: abortController.signal,
+                });
+
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error.message);
+
+                const apiResponse = data?.candidates[0].content.parts[0].text;
+                overlay.style.visibility = 'hidden';
+                mascot.style.display = 'none';
+                talkingGif.style.display = 'block';
+
+                responsiveVoice.speak(apiResponse, `UK English ${voiceType}`, {
+                    onend: () => {
+                        mascot.style.display = 'block';
+                        talkingGif.style.display = 'none';
+                        stopButton.style.display = 'none';
+                        speakButton.style.display = 'block';
+                    }
+                });
+            } catch (error) {
+                overlay.innerText = `Error: ${error.message}`;
+                mascot.style.display = 'block';
+                talkingGif.style.display = 'none';
+            }
+        };
+
+        let recognition;
+
+        speakButton.addEventListener("click", () => {
+            if (!recognition) {
+                recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+                recognition.lang = 'en-US';
+                recognition.interimResults = false;
+
+                recognition.onresult = (event) => {
+                    const userMessage = event.results[0][0].transcript;
+                    generateAPIResponse(userMessage);
+                };
+            }
+
+            recognition.start();
+            speakButton.style.display = 'none';
+            stopButton.style.display = 'block';
+        });
+    </script>
+</body>
+</html>
