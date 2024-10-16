@@ -158,6 +158,7 @@
             speakButton.style.display = 'block';
             mascot.style.display = 'block';
             talkingGif.style.display = 'none';
+            window.parent.postMessage({ type: 'updateBgMusic', bg: stopVoice }, '*');
         });
 
         const generateAPIResponse = async (userMessage) => {
