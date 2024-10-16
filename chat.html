@@ -185,7 +185,7 @@
                     onstart:() =>{
                        if (stopVoice=== 1){
                         console.log(stopVoice)
-                        window.parent.postMessage(0, '*');
+                        window.parent.postMessage({ type: 'updateBgMusic', bg: 0 }, '*');
                        } 
                     },
                     onend: () => {
@@ -193,7 +193,7 @@
                         talkingGif.style.display = 'none';
                         stopButton.style.display = 'none';
                         speakButton.style.display = 'block';
-                        window.parent.postMessage(stopVoice, '*');
+                        window.parent.postMessage({ type: 'updateBgMusic', bg: stopVoice }, '*');
                     }
                 });
             } catch (error) {
