@@ -36,6 +36,9 @@
         .music {
             margin: 20px 0;
         }
+        .music-selection {
+            margin: 20px 0;
+        }
         button {
             background-color: #FFE1FF; /* Button color */
             color: #433878; /* Text color */
@@ -74,12 +77,23 @@
         </select>
     </div>
 
+    <div class="music-selection">
+        <label for="musicChoice">Choose a Music:</label>
+        <select id="musicChoice">
+            <option value="bg">Batman</option>
+            <option value="mitali">Ore Mitali</option>
+            <option value="shake">Banana Shake</option>
+            <option value="prem">Tum Prem Ho</option>
+        </select>
+    </div>
+
     <button id="applyButton">Apply</button>
 
     <script>
         const leftOption = document.getElementById('leftOption');
         const rightOption = document.getElementById('rightOption');
         const bgMusicSelect = document.getElementById('bgMusic');
+        const musicChoice = document.getElementById('musicChoice');
         const applyButton = document.getElementById('applyButton');
 
         // Initialize selected option from sessionStorage
@@ -102,6 +116,11 @@
             bgMusicSelect.value = 'off'; // Set to 'off'
         }
 
+        // Initialize music choice from sessionStorage
+        const music = sessionStorage.getItem('music');
+        if (music) {
+            musicChoice.value = music; // Set selected music
+        }
 
         leftOption.onclick = () => {
             selectedOption = 1;
@@ -119,10 +138,18 @@
 
         applyButton.onclick = () => {
             const bgMusic = bgMusicSelect.value === 'on' ? 1 : 0;
-            window.parent.postMessage(bgMusic, '*'); 
-            sessionStorage.setItem('bg',bgMusic);
-            
+            sessionStorage.setItem('bg', bgMusic);
+            window.parent.postMessage({ type: 'updateBgMusic', bg: bgMusic }, '*');
+
+            const musicValue = musicChoice.value;
+            if (musicValue) {
+                sessionStorage.setItem('music', musicValue);
+                // Send a message to the parent window to update the audio
+                window.parent.postMessage({ type: 'updateMusic', music: musicValue }, '*');
+            }
         };
+
     </script>
 </body>
 </html>
+
