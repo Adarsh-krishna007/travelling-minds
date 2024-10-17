@@ -170,7 +170,7 @@
                 const response = await fetch(API_URL, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: `user message :${userMessage}. If the user's message is related to a location, answer the question using the location name: ${lname}. If the location name seems incorrect, adjust it based on your knowledge. If the user's message is unrelated to location, respond as usual ` }] }] }),
+                    body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: `My question :${userMessage}. use my location : ${lname} , to answer my question, if needed` }] }] }),
                     signal: abortController.signal,
                 });
 
